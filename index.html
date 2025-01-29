@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Statistical Test Selector - The Sequel</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg">
+                <h1 class="text-2xl font-bold">Statistical Test Selector - The Sequel</h1>
+            </div>
+
+            <div class="p-6 space-y-8">
+                <!-- Selection Form -->
+                <div class="space-y-6">
+                    <!-- Response Variable -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-slate-700 block">Response Variable Type:</label>
+                        <select id="responseType" class="w-full p-2 border-2 rounded-md hover:border-blue-400 transition-colors">
+                            <option value="">Select response variable type</option>
+                            <option value="continuous">Continuous</option>
+                            <option value="categorical">Categorical</option>
+                        </select>
+                    </div>
+
+                    <!-- Normality Test (initially hidden) -->
+                    <div id="normalitySection" class="space-y-2 hidden">
+                        <label class="text-sm font-medium text-slate-700 block">Is the response variable normally distributed?</label>
+                        <select id="normality" class="w-full p-2 border-2 rounded-md hover:border-blue-400 transition-colors">
+                            <option value="">Select normality</option>
+                            <option value="normal">Yes, normally distributed</option>
+                            <option value="nonNormal">No, not normally distributed</option>
+                        </select>
+                    </div>
+
+                    <!-- Explanatory Variable -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-slate-700 block">Explanatory Variable Type:</label>
+                        <select id="explanatoryType" class="w-full p-2 border-2 rounded-md hover:border-blue-400 transition-colors">
+                            <option value="">Select explanatory variable type</option>
+                            <option value="continuous">Continuous</option>
+                            <option value="categorical">Categorical</option>
+                        </select>
+                    </div>
+
+                    <!-- Categories (initially hidden) -->
+                    <div id="categoriesSection" class="space-y-2 hidden">
+                        <label class="text-sm font-medium text-slate-700 block">Number of Categories:</label>
+                        <select id="categories" class="w-full p-2 border-2 rounded-md hover:border-blue-400 transition-colors">
+                            <option value="">Select number of categories</option>
+                            <option value="2">Two categories</option>
+                            <option value="more">More than two categories</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Recommendation Section (initially hidden) -->
+                <div id="recommendationSection" class="space-y-4 hidden">
+                    <!-- Test Recommendation -->
+                    <div class="border-2 border-blue-200 bg-blue-50 p-4 rounded-lg">
+                        <p class="font-bold text-lg text-blue-800" id="testName"></p>
+                        <p class="text-blue-600" id="testExplanation"></p>
+                    </div>
+
+                    <!-- Visualization Recommendation -->
+                    <div id="visualizationSection" class="rounded-lg border-2 p-4">
+                        <p class="font-bold text-lg flex items-center gap-2 text-slate-800">
+                            <span id="visualizationType"></span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 13v-1m4 1v-3m4 3V8M12 21l9-9-9-9-9 9 9 9z"></path>
+                            </svg>
+                        </p>
+                        <p class="mt-2 text-slate-600" id="visualizationDescription"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const responseSelect = document.getElementById('responseType');
+        const normalitySection = document.getElementById('normalitySection');
+        const normalitySelect = document.getElementById('normality');
+        const explanatorySelect = document.getElementById('explanatoryType');
+        const categoriesSection = document.getElementById('categoriesSection');
+        const categoriesSelect = document.getElementById('categories');
+        const recommendationSection = document.getElementById('recommendationSection');
+        const visualizationSection = document.getElementById('visualizationSection');
+        const testName = document.getElementById('testName');
+        const testExplanation = document.getElementById('testExplanation');
+        const visualizationType = document.getElementById('visualizationType');
+        const visualizationDescription = document.getElementById('visualizationDescription');
+
+        // Show/hide relevant sections based on selections
+        function updateSections() {
+            const response = responseSelect.value;
+            const explanatory = explanatorySelect.value;
+
+            // Handle normality section
+            if (response === 'continuous') {
+                normalitySection.classList.remove('hidden');
+            } else {
+                normalitySection.classList.add('hidden');
+                normalitySelect.value = '';
+            }
+
+            // Handle categories section
+            if (explanatory === 'categorical' && response !== 'categorical') {
+                categoriesSection.classList.remove('hidden');
+            } else {
+                categoriesSection.classList.add('hidden');
+                categoriesSelect.value = '';
+            }
+
+            updateRecommendation();
+        }
+
+        // Update recommendation based on selections
+        function updateRecommendation() {
+            const response = responseSelect.value;
+            const normality = normalitySelect.value;
+            const explanatory = explanatorySelect.value;
+            const categories = categoriesSelect.value;
+
+            // Check if we have all required values
+            const needsCategories = explanatory === 'categorical' && response !== 'categorical';
+            if (!response || (response === 'continuous' && !normality) || !explanatory || (needsCategories && !categories)) {
+                recommendationSection.classList.add('hidden');
+                return;
+            }
+
+            if (response === 'continuous') {
+                if (explanatory === 'continuous') {
+                    showRecommendation(
+                        'Regression',
+                        'Use regression when examining the relationship between a continuous response variable and a continuous explanatory variable.',
+                        'Scatter plot',
+                        'Create a scatter plot with the explanatory variable on the x-axis and the response variable on the y-axis.',
+                        'bg-blue-50 border-blue-200'
+                    );
+                } else if (explanatory === 'categorical') {
+                    if (categories === '2') {
+                        if (normality === 'normal') {
+                            showRecommendation(
+                                't-test',
+                                'Use a t-test when comparing means of a normally distributed continuous response variable between two groups.',
+                                'Box plot',
+                                'Create a box plot for each category to compare the distributions.',
+                                'bg-purple-50 border-purple-200'
+                            );
+                        } else {
+                            showRecommendation(
+                                'Mann-Whitney U test (Wilcoxon test in R)',
+                                'Use a Mann-Whitney U test when comparing a non-normally distributed continuous response variable between two groups.',
+                                'Box plot',
+                                'Create a box plot for each category to compare the distributions.',
+                                'bg-purple-50 border-purple-200'
+                            );
+                        }
+                    } else if (categories === 'more') {
+                        if (normality === 'normal') {
+                            showRecommendation(
+                                'ANOVA',
+                                'Use ANOVA when comparing means of a normally distributed continuous response variable across more than two groups.',
+                                'Box plot',
+                                'Create a box plot for each category to compare the distributions.',
+                                'bg-purple-50 border-purple-200'
+                            );
+                        } else {
+                            showRecommendation(
+                                'Kruskal Wallis test',
+                                'Use a Kruskal Wallis test when comparing a non-normally distributed continuous response variable across more than two groups.',
+                                'Box plot',
+                                'Create a box plot for each category to compare the distributions.',
+                                'bg-purple-50 border-purple-200'
+                            );
+                        }
+                    }
+                }
+            } else if (response === 'categorical') {
+                if (explanatory === 'categorical') {
+                    showRecommendation(
+                        'Chi-squared test',
+                        'Use a Chi-squared test when examining the association between two categorical variables.',
+                        'Bar chart',
+                        'Create a bar chart to visualize the frequencies of different category combinations with percent on the y-axis and categories on the x-axis.',
+                        'bg-green-50 border-green-200'
+                    );
+                } else if (explanatory === 'continuous') {
+                    showRecommendation(
+                        'We haven\'t covered this yet!',
+                        'This would be a logistic regression. One for the future!',
+                        null,
+                        null,
+                        'bg-yellow-50 border-yellow-200'
+                    );
+                }
+            }
+        }
+
+        function showRecommendation(test, explanation, visType, visDescription, colorClass) {
+            testName.textContent = test;
+            testExplanation.textContent = explanation;
+            recommendationSection.classList.remove('hidden');
+
+            if (visType && visDescription) {
+                visualizationType.textContent = visType;
+                visualizationDescription.textContent = visDescription;
+                visualizationSection.className = `rounded-lg border-2 p-4 ${colorClass}`;
+                visualizationSection.classList.remove('hidden');
+            } else {
+                visualizationSection.classList.add('hidden');
+            }
+        }
+
+        // Add event listeners
+        responseSelect.addEventListener('change', updateSections);
+        normalitySelect.addEventListener('change', updateRecommendation);
+        explanatorySelect.addEventListener('change', updateSections);
+        categoriesSelect.addEventListener('change', updateRecommendation);
+    </script>
+</body>
+</html>
